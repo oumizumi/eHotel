@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { getActiveBookings, convertBookingToRenting, getEmployees } from "@/lib/api";
 import type { Booking, Employee, Renting } from "@/types";
 import { CustomSelect } from "@/components/CustomSelect";
@@ -22,7 +23,7 @@ export default function CheckInPage() {
   useEffect(() => { load(); }, []);
 
   async function handleCheckIn(booking_ID: number) {
-    if (!employeeID) return alert("Select the employee performing the check-in.");
+    if (!employeeID) return toast.error("Select the employee performing the check-in.");
     setProcessing(booking_ID);
     try {
       const renting = await convertBookingToRenting(booking_ID, Number(employeeID));

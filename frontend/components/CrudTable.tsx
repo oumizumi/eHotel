@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
+import { FolderSearch } from "lucide-react";
 
 export interface Column<T> {
   key: string;
@@ -30,8 +31,12 @@ export function CrudTable<T>({
 
   if (data.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-moss-100 p-12 text-center">
-        <p className="text-sm text-moss-400">No records found.</p>
+      <div className="bg-white rounded-xl border border-moss-100 p-16 text-center flex flex-col items-center justify-center">
+        <div className="w-16 h-16 bg-moss-50 rounded-full flex items-center justify-center mb-4 text-moss-300">
+          <FolderSearch size={28} strokeWidth={1.5} />
+        </div>
+        <p className="text-base font-semibold text-moss-800 mb-1">No records found</p>
+        <p className="text-sm text-moss-500">There is no matching data to display here yet.</p>
       </div>
     );
   }

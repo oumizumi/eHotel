@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { getRentings, addPayment } from "@/lib/api";
 import type { Renting } from "@/types";
 
@@ -20,7 +21,7 @@ export default function PaymentPage() {
 
   async function handlePay(id: number) {
     const amt = Number(amounts[id]);
-    if (!amt || amt <= 0) return alert("Enter a valid amount.");
+    if (!amt || amt <= 0) return toast.error("Enter a valid amount.");
     setPaying(id);
     await addPayment(id, amt);
     setPaying(null);

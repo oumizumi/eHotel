@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { getCustomers, getEmployees, getHotels, getRooms, createWalkInRenting } from "@/lib/api";
 import type { Customer, Employee, Hotel, Room, Renting } from "@/types";
 import { CustomSelect } from "@/components/CustomSelect";
@@ -39,7 +40,7 @@ export default function WalkInPage() {
     e.preventDefault();
     const { customer_ID, employee_ID, hotel_ID, room_ID, start_date, end_date } = form;
     if (!customer_ID || !employee_ID || !hotel_ID || !room_ID || !start_date || !end_date)
-      return alert("All fields are required.");
+      return toast.error("All fields are required.");
     setSubmitting(true);
     try {
       const renting = await createWalkInRenting({

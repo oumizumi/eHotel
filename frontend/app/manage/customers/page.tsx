@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from "@/lib/api";
 import { CrudTable } from "@/components/CrudTable";
 import type { Customer, IDType } from "@/types";
@@ -30,7 +31,7 @@ export default function CustomersPage() {
   function openEdit(c: Customer) { setForm({ name: c.name, address: c.address, ID_type: c.ID_type, ID_num: c.ID_num, date: c.date }); setEditID(c.customer_ID); setModal("edit"); }
 
   async function handleSave() {
-    if (!form.name || !form.ID_num) return alert("Name and ID number are required.");
+    if (!form.name || !form.ID_num) return toast.error("Name and ID number are required.");
     setSaving(true);
     try {
       if (modal === "add")      await createCustomer(form);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { getRooms, getHotels, createRoom, updateRoom, deleteRoom } from "@/lib/api";
 import { CrudTable } from "@/components/CrudTable";
 import { PageHeader, SearchBar, Modal, FormField, ModalActions, inputCls, btnPrimary } from "@/app/manage/customers/page";
@@ -37,7 +38,7 @@ export default function RoomsPage() {
   function openEdit(r: Room)  { setForm({ hotel_ID: r.hotel_ID, room_num: r.room_num, price: r.price, capacity: r.capacity, view_type: r.view_type, extendable: r.extendable, damaged: r.damaged, damage_des: r.damage_des, amenities: [...r.amenities] }); setEditID(r.room_ID); setModal("edit"); }
 
   async function handleSave() {
-    if (!form.hotel_ID || !form.room_num || !form.price) return alert("Hotel, room number and price are required.");
+    if (!form.hotel_ID || !form.room_num || !form.price) return toast.error("Hotel, room number and price are required.");
     setSaving(true);
     try {
       if (modal === "add")      await createRoom(form);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { getHotels, getHotelChains, createHotel, updateHotel, deleteHotel } from "@/lib/api";
 import { CrudTable } from "@/components/CrudTable";
 import { PageHeader, SearchBar, Modal, FormField, ModalActions, inputCls, btnPrimary } from "@/app/manage/customers/page";
@@ -33,7 +34,7 @@ export default function HotelsPage() {
   function openEdit(h: Hotel)  { setForm({ chain_ID: h.chain_ID, name: h.name, address: h.address, area: h.area, star_cat: h.star_cat, num_rooms: h.num_rooms, manager_ID: h.manager_ID, emails: h.emails, phones: h.phones }); setEditID(h.hotel_ID); setModal("edit"); }
 
   async function handleSave() {
-    if (!form.name || !form.chain_ID || !form.area) return alert("Name, chain and area are required.");
+    if (!form.name || !form.chain_ID || !form.area) return toast.error("Name, chain and area are required.");
     setSaving(true);
     try {
       if (modal === "add")      await createHotel(form);

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRole } from "@/components/RoleProvider";
+import { UserCircle } from "lucide-react";
 
 export default function Navbar() {
   const path     = usePathname();
@@ -59,6 +60,13 @@ export default function Navbar() {
             );
           })}
         </nav>
+
+        <div className="ml-auto flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full border border-white/10 text-white/90 shrink-0 transition-colors">
+            <UserCircle size={14} className="opacity-70" />
+            <span className="text-xs font-semibold capitalize">{role}</span>
+          </Link>
+        </div>
 
       </div>
     </header>

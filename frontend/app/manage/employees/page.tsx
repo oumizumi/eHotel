@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { getEmployees, getHotels, createEmployee, updateEmployee, deleteEmployee } from "@/lib/api";
 import { CrudTable } from "@/components/CrudTable";
 import { PageHeader, SearchBar, Modal, FormField, ModalActions, inputCls, btnPrimary } from "@/app/manage/customers/page";
@@ -30,7 +31,7 @@ export default function EmployeesPage() {
   function openEdit(e: Employee) { setForm({ hotel_ID: e.hotel_ID, name: e.name, address: e.address, SSN: e.SSN, position: e.position }); setEditID(e.employee_ID); setModal("edit"); }
 
   async function handleSave() {
-    if (!form.name || !form.SSN || !form.position || !form.hotel_ID) return alert("All fields are required.");
+    if (!form.name || !form.SSN || !form.position || !form.hotel_ID) return toast.error("All fields are required.");
     setSaving(true);
     try {
       if (modal === "add")      await createEmployee(form);

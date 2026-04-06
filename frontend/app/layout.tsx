@@ -3,6 +3,7 @@ import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import { RoleProvider } from "@/components/RoleProvider";
 import AppShell from "@/components/AppShell";
+import { Toaster } from "sonner";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -22,6 +23,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <RoleProvider>
           <AppShell>{children}</AppShell>
+          <Toaster 
+            position="bottom-center" 
+            toastOptions={{ 
+              style: { background: '#3D4127', color: '#fff', border: 'none', borderRadius: '12px' } 
+            }} 
+          />
         </RoleProvider>
       </body>
     </html>
