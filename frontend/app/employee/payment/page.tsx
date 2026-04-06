@@ -10,7 +10,6 @@ export default function PaymentPage() {
   const [loading, setLoading]   = useState(true);
   const [amounts, setAmounts]   = useState<Record<number, string>>({});
   const [paying, setPaying]     = useState<number | null>(null);
-  const [toast, setToast]       = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -25,8 +24,7 @@ export default function PaymentPage() {
     setPaying(id);
     await addPayment(id, amt);
     setPaying(null);
-    setToast(`Payment of $${amt} recorded for Renting #${id}`);
-    setTimeout(() => setToast(null), 4000);
+    toast.success(`Payment of $${amt} recorded for Renting #${id}`);
     load();
   }
 
@@ -101,11 +99,6 @@ export default function PaymentPage() {
         </div>
       )}
 
-      {toast && (
-        <div className="fixed bottom-6 right-6 bg-moss-800 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg">
-          {toast}
-        </div>
-      )}
     </div>
   );
 }
