@@ -188,10 +188,10 @@ export function createWalkInRenting(data: {
   return req("/rentings", { method: "POST", body: JSON.stringify(data) });
 }
 
-export function addPayment(renting_ID: number, amount: number): Promise<Renting> {
+export function addPayment(renting_ID: number, amount: number, paymentMethod: string): Promise<Renting> {
   return req(`/rentings/${renting_ID}/payment`, {
     method: "PUT",
-    body: JSON.stringify({ amount }),
+    body: JSON.stringify({ amount, method: paymentMethod }),
   });
 }
 

@@ -5,10 +5,14 @@ import { toast } from "sonner";
 import { getRentings, addPayment } from "@/lib/api";
 import type { Renting } from "@/types";
 
+const METHODS = ["cash", "credit", "debit", "online"] as const;
+type PaymentMethod = (typeof METHODS)[number];
+
 export default function PaymentPage() {
   const [rentings, setRentings] = useState<Renting[]>([]);
   const [loading, setLoading]   = useState(true);
   const [amounts, setAmounts]   = useState<Record<number, string>>({});
+  const [methods, setMethods]   = useState<Record<number, PaymentMethod>>({});
   const [paying, setPaying]     = useState<number | null>(null);
 
   async function load() {
@@ -21,10 +25,11 @@ export default function PaymentPage() {
   async function handlePay(id: number) {
     const amt = Number(amounts[id]);
     if (!amt || amt <= 0) return toast.error("Enter a valid amount.");
+    const method = methods[id] ?? "cash";
     setPaying(id);
-    await addPayment(id, amt);
+    await addPayment(id, amt, method);
     setPaying(null);
-    toast.success(`Payment of $${amt} recorded for Renting #${id}`);
+    toast.success(`Payment of $${amt} (${method}) recorded for Renting #${id}`);
     load();
   }
 
@@ -46,30 +51,41 @@ export default function PaymentPage() {
       ) : (
         <div className="space-y-3 mb-8">
           {unpaid.map((r) => (
-            <div key={r.renting_ID} className="bg-white border border-moss-200 rounded-xl px-5 py-4 flex items-center gap-5">
-              <div className="flex-1">
-                <p className="font-semibold text-moss-900 text-sm mb-0.5">{r.customer_name}</p>
-                <p className="text-sm text-moss-700">{r.hotel_name} &middot; Room {r.room_num}</p>
-                <p className="text-xs text-moss-600 mt-0.5">
-                  {r.start_date} &rarr; {r.end_date}
-                  {r.booking_ID && ` &middot; From booking #${r.booking_ID}`}
-                  &nbsp;&middot; Renting #{r.renting_ID}
-                </p>
+            <div key={r.renting_ID} className="bg-white border border-moss-200 rounded-xl px-5 py-4">
+              <div className="flex items-start justify-between gap-4 mb-3">
+                <div className="flex-1">
+                  <p className="font-semibold text-moss-900 text-sm mb-0.5">{r.customer_name}</p>
+                  <p className="text-sm text-moss-700">{r.hotel_name} &middot; Room {r.room_num}</p>
+                  <p className="text-xs text-moss-600 mt-0.5">
+                    {r.start_date} &rarr; {r.end_date}
+                    {r.booking_ID && ` · From booking #${r.booking_ID}`}
+                    {` · Renting #${r.renting_ID}`}
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="relative">
+              <div className="flex items-center gap-2">
+                <select
+                  value={methods[r.renting_ID] ?? "cash"}
+                  onChange={(e) => setMethods((p) => ({ ...p, [r.renting_ID]: e.target.value as PaymentMethod }))}
+                  className="border border-moss-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-moss-300 focus:border-transparent bg-white capitalize"
+                >
+                  {METHODS.map((m) => (
+                    <option key={m} value={m} className="capitalize">{m.charAt(0).toUpperCase() + m.slice(1)}</option>
+                  ))}
+                </select>
+                <div className="relative flex-1">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-moss-600 text-sm font-medium">$</span>
                   <input
                     type="number" min={1} placeholder="0.00"
                     value={amounts[r.renting_ID] ?? ""}
                     onChange={(e) => setAmounts((p) => ({ ...p, [r.renting_ID]: e.target.value }))}
-                    className="w-28 pl-7 border border-moss-200 rounded-lg py-2 text-sm focus:outline-none focus:ring-2 focus:ring-moss-300 focus:border-transparent"
+                    className="w-full pl-7 border border-moss-200 rounded-lg py-2 text-sm focus:outline-none focus:ring-2 focus:ring-moss-300 focus:border-transparent"
                   />
                 </div>
                 <button
                   onClick={() => handlePay(r.renting_ID)}
                   disabled={paying === r.renting_ID}
-                  className="bg-moss-800 hover:bg-moss-900 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                  className="bg-moss-800 hover:bg-moss-900 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shrink-0"
                 >
                   {paying === r.renting_ID ? "..." : "Pay"}
                 </button>
@@ -98,7 +114,6 @@ export default function PaymentPage() {
           ))}
         </div>
       )}
-
     </div>
   );
 }
