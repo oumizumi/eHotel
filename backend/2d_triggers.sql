@@ -73,12 +73,12 @@ BEGIN
         FROM Renting rt
         WHERE rt.room_ID    = NEW.room_ID
           AND rt.renting_ID <> NEW.renting_ID
-          AND rt.start      < NEW.end
-          AND rt.end        > NEW.start
+          AND rt."start"    < NEW."end"
+          AND rt."end"      > NEW."start"
     ) THEN
         RAISE EXCEPTION
             'Room % is already rented for overlapping dates (% to %)',
-            NEW.room_ID, NEW.start, NEW.end;
+            NEW.room_ID, NEW."start", NEW."end";
     END IF;
     RETURN NEW;
 END;

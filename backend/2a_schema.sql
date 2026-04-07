@@ -84,9 +84,6 @@ ALTER TABLE Hotel
     ON DELETE SET NULL;
 
 ALTER TABLE Hotel
-    ALTER COLUMN manager_ID SET NOT NULL;
-
-ALTER TABLE Hotel
     ADD CONSTRAINT unique_manager UNIQUE (manager_ID);
 
 CREATE TABLE Room (
@@ -113,11 +110,11 @@ CREATE TABLE Booking (
     customer_ID     INTEGER         NOT NULL REFERENCES Customer(customer_ID),
     booking_date    DATE            NOT NULL,
     status          VARCHAR(20)     NOT NULL DEFAULT 'active'
-                                    CHECK (status IN ('active', 'cancelled', 'completed')),
-    start           DATE            NOT NULL,
-    end             DATE            NOT NULL,
-    CHECK (end > start),
-    CHECK (start >= booking_date)
+                                    CHECK (status IN ('active', 'cancelled', 'completed', 'archived')),
+    "start"         DATE            NOT NULL,
+    "end"           DATE            NOT NULL,
+    CHECK ("end" > "start"),
+    CHECK ("start" >= booking_date)
 );
 
 CREATE TABLE ReservedFor (
@@ -131,10 +128,11 @@ CREATE TABLE Renting (
     customer_ID     INTEGER         NOT NULL REFERENCES Customer(customer_ID),
     room_ID         INTEGER         NOT NULL REFERENCES Room(room_ID),
     booking_ID      INTEGER         UNIQUE REFERENCES Booking(booking_ID),
+    employee_ID     INTEGER         REFERENCES Employee(employee_ID),
     renting_date    DATE            NOT NULL,
-    start           DATE            NOT NULL,
-    end             DATE            NOT NULL,
-    CHECK (end > start)
+    "start"         DATE            NOT NULL,
+    "end"           DATE            NOT NULL,
+    CHECK ("end" > "start")
 );
 
 CREATE TABLE Payment (
@@ -154,8 +152,8 @@ CREATE TABLE BookingArchive (
     hotel_name          VARCHAR(100),
     chain_name          VARCHAR(100),
     room_number         INTEGER,
-    start               DATE,
-    end                 DATE
+    "start"             DATE,
+    "end"               DATE
 );
 
 CREATE TABLE RentingArchive (
@@ -167,8 +165,8 @@ CREATE TABLE RentingArchive (
     chain_name          VARCHAR(100),
     room_number         INTEGER,
     employee            VARCHAR(100),
-    start               DATE,
-    end                 DATE
+    "start"             DATE,
+    "end"               DATE
 );
 
 
@@ -176,7 +174,7 @@ CREATE TABLE RentingArchive (
 CREATE OR REPLACE FUNCTION check_manager_hotel()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NOT EXISTS (
+    IF NEW.manager_ID IS NOT NULL AND NOT EXISTS (
         SELECT 1 FROM Employee
         WHERE employee_ID = NEW.manager_ID
           AND hotel_ID = NEW.hotel_ID
@@ -201,7 +199,7 @@ DECLARE
     new_start DATE;
     new_end   DATE;
 BEGIN
-    SELECT start, end INTO new_start, new_end
+    SELECT "start", "end" INTO new_start, new_end
     FROM Booking WHERE booking_ID = NEW.booking_ID;
 
     IF EXISTS (
@@ -211,8 +209,8 @@ BEGIN
         WHERE rf.room_ID = NEW.room_ID
           AND b.status = 'active'
           AND b.booking_ID <> NEW.booking_ID
-          AND b.start < new_end
-          AND b.end   > new_start
+          AND b."start" < new_end
+          AND b."end"   > new_start
     ) THEN
         RAISE EXCEPTION
             'Room % is already booked for overlapping dates', NEW.room_ID;
@@ -280,11 +278,11 @@ BEGIN
 
     INSERT INTO BookingArchive (
         archive_ID, customer_name, customer_ID, original_booking,
-        hotel_name, chain_name, room_number, start, end
+        hotel_name, chain_name, room_number, "start", "end"
     ) VALUES (
         nextval('booking_archive_seq'),
         c_name, OLD.customer_ID, OLD.booking_ID,
-        h_name, ch_name, r_num, OLD.start, OLD.end
+        h_name, ch_name, r_num, OLD."start", OLD."end"
     );
     RETURN OLD;
 END;
@@ -320,11 +318,11 @@ BEGIN
 
     INSERT INTO RentingArchive (
         archive_ID, customer_name, customer_ID, original_renting,
-        hotel_name, chain_name, room_number, employee, start, end
+        hotel_name, chain_name, room_number, employee, "start", "end"
     ) VALUES (
         nextval('renting_archive_seq'),
         c_name, OLD.customer_ID, OLD.renting_ID,
-        h_name, ch_name, r_num, e_name, OLD.start, OLD.end
+        h_name, ch_name, r_num, e_name, OLD."start", OLD."end"
     );
     RETURN OLD;
 END;

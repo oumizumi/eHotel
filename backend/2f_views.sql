@@ -19,8 +19,8 @@ WHERE r.damaged = FALSE
       FROM ReservedFor rf
       JOIN Booking b ON rf.booking_ID = b.booking_ID
       WHERE b.status = 'active'
-        AND b.start <= CURRENT_DATE
-        AND b.end   >= CURRENT_DATE
+        AND b."start" <= CURRENT_DATE
+        AND b."end"   >= CURRENT_DATE
   )
 GROUP BY TRIM(SPLIT_PART(h.address, ',', 2))
 ORDER BY area;
@@ -80,7 +80,7 @@ WHERE r.damaged = FALSE
       FROM ReservedFor rf
       JOIN Booking b ON rf.booking_ID = b.booking_ID
       WHERE b.status = 'active'
-        AND b.start <= CURRENT_DATE
-        AND b.end   >= CURRENT_DATE
+        AND b."start" <= CURRENT_DATE
+        AND b."end"   >= CURRENT_DATE
   )
 ORDER BY hc.name, h.name, r.price;

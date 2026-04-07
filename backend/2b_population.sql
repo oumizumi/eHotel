@@ -353,7 +353,7 @@ INSERT INTO RoomAmenity VALUES
 
 
 -- Bookings
-INSERT INTO Booking (booking_ID, customer_ID, booking_date, status, start, end) VALUES
+INSERT INTO Booking (booking_ID, customer_ID, booking_date, status, "start", "end") VALUES
 (1, 1, '2026-03-01', 'completed', '2026-03-10', '2026-03-15'),
 (2, 2, '2026-03-05', 'completed', '2026-03-12', '2026-03-14'),
 (3, 3, '2026-03-08', 'active',    '2026-04-05', '2026-04-10'),
@@ -369,7 +369,7 @@ INSERT INTO ReservedFor VALUES
 
 
 -- Rentings
-INSERT INTO Renting (renting_ID, customer_ID, room_ID, booking_ID, renting_date, start, end) VALUES
+INSERT INTO Renting (renting_ID, customer_ID, room_ID, booking_ID, renting_date, "start", "end") VALUES
 (1, 1, 10102, 1,    '2026-03-10', '2026-03-10', '2026-03-15'),
 (2, 2, 10201, 2,    '2026-03-12', '2026-03-12', '2026-03-14'),
 (3, 7, 10103, 7,    '2026-03-25', '2026-03-25', '2026-03-28'),
