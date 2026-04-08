@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { searchRooms, getHotelChains, createBooking, getCustomers } from "@/lib/api";
 import type { RoomSearchResult, SearchFilters, HotelChain, Customer } from "@/types";
 import { AREAS, CAPACITIES } from "@/lib/mockData";
@@ -21,6 +22,7 @@ export default function SearchPage() {
   const [bookingRoom, setBookingRoom] = useState<RoomSearchResult | null>(null);
   const [bookingDone, setBookingDone] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   useEffect(() => {
     getHotelChains().then(setChains);
@@ -42,6 +44,7 @@ export default function SearchPage() {
   async function handleBook() {
     if (!bookingRoom || !filters.start_date || !filters.end_date || selectedCustomer === "") return;
     setBookingLoading(true);
+    setBookingError(null);
     try {
       await createBooking({
         customer_ID: selectedCustomer,
@@ -51,7 +54,11 @@ export default function SearchPage() {
         end_date: filters.end_date,
       });
       setBookingDone(true);
-    } finally { setBookingLoading(false); }
+    } catch (err) {
+      setBookingError(err instanceof Error ? err.message : "Booking failed. Please try again.");
+    } finally {
+      setBookingLoading(false);
+    }
   }
 
   const nights =
@@ -183,7 +190,7 @@ export default function SearchPage() {
               <RoomCard
                 key={room.room_ID}
                 room={room}
-                onBook={() => { setBookingRoom(room); setBookingDone(false); }}
+                onBook={() => { setBookingRoom(room); setBookingDone(false); setBookingError(null); }}
               />
             ))}
           </div>
@@ -191,7 +198,7 @@ export default function SearchPage() {
       </div>
 
       {/* ── Booking modal ── */}
-      {bookingRoom && (
+      {bookingRoom && createPortal(
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
             {bookingDone ? (
@@ -249,6 +256,11 @@ export default function SearchPage() {
                       Select check-in and check-out dates in the filter panel first.
                     </p>
                   )}
+                  {bookingError && (
+                    <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                      {bookingError}
+                    </p>
+                  )}
                   <div className="flex gap-3">
                     <button onClick={() => setBookingRoom(null)} className="flex-1 border border-moss-300 rounded-lg py-2.5 text-sm font-medium hover:bg-moss-50">Cancel</button>
                     <button
@@ -263,7 +275,8 @@ export default function SearchPage() {
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

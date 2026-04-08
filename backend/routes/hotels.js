@@ -45,15 +45,15 @@ router.get('/', async (req, res) => {
 
 // POST /api/hotels
 router.post('/', async (req, res) => {
-  const { chain_ID, name, address, star_cat, manager_ID = null, emails = [], phones = [] } = req.body;
+  const { chain_ID, name, address, star_cat, num_rooms = 0, manager_ID = null, emails = [], phones = [] } = req.body;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const { rows } = await client.query(
       `INSERT INTO hotel (hotel_id, chain_id, name, address, star_cat, num_rooms, manager_id)
-       VALUES ((SELECT COALESCE(MAX(hotel_id), 0) + 1 FROM hotel), $1, $2, $3, $4, 0, $5)
+       VALUES ((SELECT COALESCE(MAX(hotel_id), 0) + 1 FROM hotel), $1, $2, $3, $4, $5, $6)
        RETURNING hotel_id`,
-      [chain_ID, name, address, star_cat, manager_ID]
+      [chain_ID, name, address, star_cat, num_rooms, manager_ID]
     );
     const id = rows[0].hotel_id;
     for (const e of emails) await client.query('INSERT INTO hotelemail VALUES ($1,$2)', [id, e]);
@@ -71,14 +71,14 @@ router.post('/', async (req, res) => {
 
 // PUT /api/hotels/:id
 router.put('/:id', async (req, res) => {
-  const { chain_ID, name, address, star_cat, manager_ID, emails, phones } = req.body;
+  const { chain_ID, name, address, star_cat, num_rooms, manager_ID, emails, phones } = req.body;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const { rows } = await client.query(
-      `UPDATE hotel SET chain_id=$1, name=$2, address=$3, star_cat=$4, manager_id=$5
-       WHERE hotel_id=$6 RETURNING hotel_id`,
-      [chain_ID, name, address, star_cat, manager_ID ?? null, req.params.id]
+      `UPDATE hotel SET chain_id=$1, name=$2, address=$3, star_cat=$4, num_rooms=$5, manager_id=$6
+       WHERE hotel_id=$7 RETURNING hotel_id`,
+      [chain_ID, name, address, star_cat, num_rooms ?? 0, manager_ID ?? null, req.params.id]
     );
     if (!rows[0]) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Hotel not found' }); }
     const id = rows[0].hotel_id;

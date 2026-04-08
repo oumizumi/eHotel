@@ -68,7 +68,7 @@ export interface Employee {
 
 // ─── Booking ──────────────────────────────────────────────────────────────────
 
-export type BookingStatus = "active" | "completed" | "cancelled";
+export type BookingStatus = "active" | "archived" | "completed" | "cancelled";
 
 export interface Booking {
   booking_ID: number;

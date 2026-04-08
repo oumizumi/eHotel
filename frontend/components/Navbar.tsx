@@ -19,6 +19,7 @@ export default function Navbar() {
     { href: "/employee/walkin",   label: "Walk-In"   },
     { href: "/employee/payment",  label: "Payments"  },
     { href: "/manage/bookings",   label: "Bookings"  },
+    { href: "/manage/rentings",   label: "Rentings"  },
     { href: "/manage/customers",  label: "Customers" },
     { href: "/manage/employees",  label: "Employees" },
     { href: "/manage/chains",     label: "Chains"    },

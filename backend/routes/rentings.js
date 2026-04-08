@@ -73,7 +73,7 @@ router.post('/from-booking', async (req, res) => {
        RETURNING renting_id`,
       [b.customer_id, b.room_id, booking_ID, employee_ID, b.start, b.end]
     );
-    await client.query(`UPDATE booking SET status='archived' WHERE booking_id=$1`, [booking_ID]);
+    await client.query(`UPDATE booking SET status='completed' WHERE booking_id=$1`, [booking_ID]);
     await client.query('COMMIT');
 
     const { rows: full } = await pool.query(RENTING_SELECT + ' WHERE rt.renting_id=$1', [rows[0].renting_id]);
