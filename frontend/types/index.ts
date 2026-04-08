@@ -38,8 +38,8 @@ export interface Room {
   view_type: ViewType;
   damaged: boolean;
   extendable: boolean;
-  damage_des: string | null;
   amenities: string[];
+  damages:   string[];
 }
 
 // ─── Customer ─────────────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ export interface Employee {
 
 // ─── Booking ──────────────────────────────────────────────────────────────────
 
-export type BookingStatus = "active" | "archived" | "cancelled";
+export type BookingStatus = "active" | "completed" | "cancelled";
 
 export interface Booking {
   booking_ID: number;

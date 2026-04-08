@@ -26,8 +26,8 @@ WHERE r.damaged = FALSE
       FROM ReservedFor rf
       JOIN Booking b ON rf.booking_ID = b.booking_ID
       WHERE b.status = 'active'
-        AND b.start < '2026-04-30'   -- requested end date
-        AND b.end   > '2026-04-10'   -- requested start date
+        AND b."start" < '2026-04-30'   -- requested end date
+        AND b."end"   > '2026-04-10'   -- requested start date
   )
 ORDER BY r.price;
 
@@ -93,8 +93,8 @@ WHERE NOT EXISTS (
     JOIN Booking b      ON rf.booking_ID = b.booking_ID
     WHERE r.hotel_ID  = h.hotel_ID
       AND b.status    = 'active'
-      AND b.start     <= CURRENT_DATE
-      AND b.end       >= CURRENT_DATE
+      AND b."start"   <= CURRENT_DATE
+      AND b."end"     >= CURRENT_DATE
 )
 ORDER BY hc.name, h.name;
 

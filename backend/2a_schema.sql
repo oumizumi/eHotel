@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS Payment CASCADE;
 DROP TABLE IF EXISTS Renting CASCADE;
 DROP TABLE IF EXISTS ReservedFor CASCADE;
 DROP TABLE IF EXISTS Booking CASCADE;
+DROP TABLE IF EXISTS RoomDamage CASCADE;
 DROP TABLE IF EXISTS RoomAmenity CASCADE;
 DROP TABLE IF EXISTS Room CASCADE;
 DROP TABLE IF EXISTS HotelPhone CASCADE;
@@ -94,7 +95,6 @@ CREATE TABLE Room (
     view_type   VARCHAR(20)     CHECK (view_type IN ('sea', 'mountain', 'none')),
     damaged     BOOLEAN         NOT NULL DEFAULT FALSE,
     extendable  BOOLEAN         NOT NULL DEFAULT FALSE,
-    damage_des  VARCHAR(255),
     price       DECIMAL(10,2)   NOT NULL CHECK (price > 0),
     UNIQUE (hotel_ID, room_num)
 );
@@ -105,12 +105,19 @@ CREATE TABLE RoomAmenity (
     PRIMARY KEY (room_ID, amenity)
 );
 
+-- Multi-valued: a room may have multiple damages
+CREATE TABLE RoomDamage (
+    room_ID     INTEGER         NOT NULL REFERENCES Room(room_ID) ON DELETE CASCADE,
+    description VARCHAR(255)    NOT NULL,
+    PRIMARY KEY (room_ID, description)
+);
+
 CREATE TABLE Booking (
     booking_ID      INTEGER         PRIMARY KEY,
     customer_ID     INTEGER         NOT NULL REFERENCES Customer(customer_ID),
     booking_date    DATE            NOT NULL,
     status          VARCHAR(20)     NOT NULL DEFAULT 'active'
-                                    CHECK (status IN ('active', 'cancelled', 'completed', 'archived')),
+                                    CHECK (status IN ('active', 'cancelled', 'completed')),
     "start"         DATE            NOT NULL,
     "end"           DATE            NOT NULL,
     CHECK ("end" > "start"),
@@ -119,7 +126,7 @@ CREATE TABLE Booking (
 
 CREATE TABLE ReservedFor (
     room_ID     INTEGER         NOT NULL REFERENCES Room(room_ID) ON DELETE CASCADE,
-    booking_ID  INTEGER         NOT NULL REFERENCES Booking(booking_ID) ON DELETE CASCADE,
+    booking_ID  INTEGER         NOT NULL UNIQUE REFERENCES Booking(booking_ID) ON DELETE CASCADE,
     PRIMARY KEY (room_ID, booking_ID)
 );
 
@@ -168,6 +175,26 @@ CREATE TABLE RentingArchive (
     "start"             DATE,
     "end"               DATE
 );
+
+
+-- Trigger 0: once a manager is assigned to a hotel, manager_ID cannot be set back to NULL
+-- This enforces the requirement that every hotel must have a manager.
+-- manager_ID starts NULL only during initial population (before employees are inserted).
+CREATE OR REPLACE FUNCTION prevent_manager_unset()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.manager_ID IS NOT NULL AND NEW.manager_ID IS NULL THEN
+        RAISE EXCEPTION
+            'Hotel % already has a manager assigned; manager_ID cannot be removed.',
+            OLD.hotel_ID;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_prevent_manager_unset
+BEFORE UPDATE ON Hotel
+FOR EACH ROW EXECUTE FUNCTION prevent_manager_unset();
 
 
 -- Trigger 1: manager must belong to the hotel they manage

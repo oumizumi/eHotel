@@ -11,7 +11,7 @@ import { CustomSelect } from "@/components/CustomSelect";
 
 const EMPTY: Omit<Room, "room_ID"> = {
   hotel_ID: 0, room_num: 1, price: 100, capacity: "single", view_type: "none",
-  extendable: false, damaged: false, damage_des: null, amenities: [],
+  extendable: false, damaged: false, amenities: [], damages: [],
 };
 
 const ALL_AMENITIES = ["TV", "WiFi", "AC", "Fridge", "Minibar", "Jacuzzi", "Balcony", "Living room", "Kitchen"];
@@ -35,7 +35,7 @@ export default function RoomsPage() {
   useEffect(() => { load(); }, []);
 
   function openAdd()          { setForm(EMPTY); setEditID(null); setModal("add"); }
-  function openEdit(r: Room)  { setForm({ hotel_ID: r.hotel_ID, room_num: r.room_num, price: r.price, capacity: r.capacity, view_type: r.view_type, extendable: r.extendable, damaged: r.damaged, damage_des: r.damage_des, amenities: [...r.amenities] }); setEditID(r.room_ID); setModal("edit"); }
+  function openEdit(r: Room)  { setForm({ hotel_ID: r.hotel_ID, room_num: r.room_num, price: r.price, capacity: r.capacity, view_type: r.view_type, extendable: r.extendable, damaged: r.damaged, amenities: [...r.amenities], damages: [...r.damages] }); setEditID(r.room_ID); setModal("edit"); }
 
   async function handleSave() {
     if (!form.hotel_ID || !form.room_num || !form.price) return toast.error("Hotel, room number and price are required.");
@@ -145,8 +145,20 @@ export default function RoomsPage() {
             </label>
           </div>
           {form.damaged && (
-            <FormField label="Damage Description">
-              <input type="text" value={form.damage_des ?? ""} onChange={(e) => setForm((p) => ({ ...p, damage_des: e.target.value }))} className={inputCls} placeholder="Describe the issue..." />
+            <FormField label="Damages">
+              <div className="flex flex-col gap-2">
+                {form.damages.map((d, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <input
+                      type="text" value={d}
+                      onChange={(e) => setForm((p) => { const ds = [...p.damages]; ds[i] = e.target.value; return { ...p, damages: ds }; })}
+                      className={inputCls + " flex-1"} placeholder="Describe damage..."
+                    />
+                    <button type="button" onClick={() => setForm((p) => ({ ...p, damages: p.damages.filter((_, j) => j !== i) }))} className="text-red-500 text-sm px-2">✕</button>
+                  </div>
+                ))}
+                <button type="button" onClick={() => setForm((p) => ({ ...p, damages: [...p.damages, ""] }))} className="text-xs text-moss-700 underline text-left">+ Add damage</button>
+              </div>
             </FormField>
           )}
           <FormField label="Amenities">

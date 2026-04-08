@@ -4,9 +4,11 @@ const pool    = require('../db');
 
 const ROOM_SELECT = `
   SELECT r.*,
-    COALESCE(array_agg(ra.amenity) FILTER (WHERE ra.amenity IS NOT NULL), '{}') AS amenities
+    COALESCE(array_agg(DISTINCT ra.amenity) FILTER (WHERE ra.amenity IS NOT NULL), '{}') AS amenities,
+    COALESCE(array_agg(DISTINCT rd.description) FILTER (WHERE rd.description IS NOT NULL), '{}') AS damages
   FROM room r
   LEFT JOIN roomamenity ra ON r.room_id = ra.room_id
+  LEFT JOIN roomdamage  rd ON r.room_id = rd.room_id
 `;
 
 function mapRoom(r) {
@@ -19,8 +21,8 @@ function mapRoom(r) {
     view_type:  r.view_type,
     damaged:    r.damaged,
     extendable: r.extendable,
-    damage_des: r.damage_des,
     amenities:  r.amenities || [],
+    damages:    r.damages   || [],
   };
 }
 
@@ -79,8 +81,9 @@ router.get('/search', async (req, res) => {
 
     const { rows } = await pool.query(`
       SELECT r.room_id, r.hotel_id, r.room_num, r.price, r.capacity, r.view_type,
-        r.damaged, r.extendable, r.damage_des,
+        r.damaged, r.extendable,
         COALESCE(array_agg(DISTINCT ra.amenity) FILTER (WHERE ra.amenity IS NOT NULL), '{}') AS amenities,
+        COALESCE(array_agg(DISTINCT rd.description) FILTER (WHERE rd.description IS NOT NULL), '{}') AS damages,
         h.name AS hotel_name,
         TRIM(SPLIT_PART(h.address, ',', 2)) AS hotel_area,
         hc.name AS chain_name,
@@ -91,6 +94,7 @@ router.get('/search', async (req, res) => {
       JOIN hotel h       ON r.hotel_id  = h.hotel_id
       JOIN hotelchain hc ON h.chain_id  = hc.chain_id
       LEFT JOIN roomamenity ra ON r.room_id = ra.room_id
+      LEFT JOIN roomdamage  rd ON r.room_id = rd.room_id
       ${where}
       GROUP BY r.room_id, h.hotel_id, hc.chain_id
       ORDER BY r.price
@@ -98,11 +102,11 @@ router.get('/search', async (req, res) => {
 
     res.json(rows.map(r => ({
       ...mapRoom(r),
-      hotel_name:     r.hotel_name,
-      hotel_area:     r.hotel_area,
-      chain_name:     r.chain_name,
-      chain_ID:       r.chain_id,
-      star_cat:       r.star_cat,
+      hotel_name:      r.hotel_name,
+      hotel_area:      r.hotel_area,
+      chain_name:      r.chain_name,
+      chain_ID:        r.chain_id,
+      star_cat:        r.star_cat,
       hotel_num_rooms: r.hotel_num_rooms,
     })));
   } catch (err) {
@@ -112,18 +116,19 @@ router.get('/search', async (req, res) => {
 
 // POST /api/rooms
 router.post('/', async (req, res) => {
-  const { hotel_ID, room_num, price, capacity, view_type = 'none', damaged = false, extendable = false, damage_des = null, amenities = [] } = req.body;
+  const { hotel_ID, room_num, price, capacity, view_type = 'none', damaged = false, extendable = false, amenities = [], damages = [] } = req.body;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const { rows } = await client.query(
-      `INSERT INTO room (room_id, hotel_id, room_num, price, capacity, view_type, damaged, extendable, damage_des)
-       VALUES ((SELECT COALESCE(MAX(room_id), 0) + 1 FROM room), $1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO room (room_id, hotel_id, room_num, price, capacity, view_type, damaged, extendable)
+       VALUES ((SELECT COALESCE(MAX(room_id), 0) + 1 FROM room), $1, $2, $3, $4, $5, $6, $7)
        RETURNING room_id`,
-      [hotel_ID, room_num, price, capacity, view_type, damaged, extendable, damage_des]
+      [hotel_ID, room_num, price, capacity, view_type, damaged, extendable]
     );
     const id = rows[0].room_id;
     for (const a of amenities) await client.query('INSERT INTO roomamenity VALUES ($1,$2)', [id, a]);
+    for (const d of damages)   await client.query('INSERT INTO roomdamage VALUES ($1,$2)', [id, d]);
     await client.query('COMMIT');
     const { rows: full } = await pool.query(ROOM_SELECT + ' WHERE r.room_id=$1 GROUP BY r.room_id', [id]);
     res.status(201).json(mapRoom(full[0]));
@@ -137,20 +142,24 @@ router.post('/', async (req, res) => {
 
 // PUT /api/rooms/:id
 router.put('/:id', async (req, res) => {
-  const { hotel_ID, room_num, price, capacity, view_type, damaged, extendable, damage_des, amenities } = req.body;
+  const { hotel_ID, room_num, price, capacity, view_type, damaged, extendable, amenities, damages } = req.body;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const { rows } = await client.query(
-      `UPDATE room SET hotel_id=$1, room_num=$2, price=$3, capacity=$4, view_type=$5, damaged=$6, extendable=$7, damage_des=$8
-       WHERE room_id=$9 RETURNING room_id`,
-      [hotel_ID, room_num, price, capacity, view_type, damaged, extendable, damage_des, req.params.id]
+      `UPDATE room SET hotel_id=$1, room_num=$2, price=$3, capacity=$4, view_type=$5, damaged=$6, extendable=$7
+       WHERE room_id=$8 RETURNING room_id`,
+      [hotel_ID, room_num, price, capacity, view_type, damaged, extendable, req.params.id]
     );
     if (!rows[0]) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Room not found' }); }
     const id = rows[0].room_id;
     if (amenities !== undefined) {
       await client.query('DELETE FROM roomamenity WHERE room_id=$1', [id]);
       for (const a of amenities) await client.query('INSERT INTO roomamenity VALUES ($1,$2)', [id, a]);
+    }
+    if (damages !== undefined) {
+      await client.query('DELETE FROM roomdamage WHERE room_id=$1', [id]);
+      for (const d of damages) await client.query('INSERT INTO roomdamage VALUES ($1,$2)', [id, d]);
     }
     await client.query('COMMIT');
     const { rows: full } = await pool.query(ROOM_SELECT + ' WHERE r.room_id=$1 GROUP BY r.room_id', [id]);

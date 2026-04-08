@@ -352,6 +352,13 @@ INSERT INTO RoomAmenity VALUES
 (30104,'WiFi'),(30104,'TV'),(30104,'Air Conditioning'),(30104,'Fridge'),(30104,'Jacuzzi'),(30104,'Minibar'),(30104,'Butler Service');
 
 
+-- Room damages (multi-valued: one row per damage per room)
+INSERT INTO RoomDamage VALUES
+(10106, 'Broken window latch'),
+(20206, 'Stained carpet'),
+(20206, 'Cracked bathroom tile');
+
+
 -- Bookings
 INSERT INTO Booking (booking_ID, customer_ID, booking_date, status, "start", "end") VALUES
 (1, 1, '2026-03-01', 'completed', '2026-03-10', '2026-03-15'),
