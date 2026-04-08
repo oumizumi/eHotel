@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { searchRooms, getHotelChains, createBooking } from "@/lib/api";
-import type { RoomSearchResult, SearchFilters, HotelChain } from "@/types";
+import { searchRooms, getHotelChains, createBooking, getCustomers } from "@/lib/api";
+import type { RoomSearchResult, SearchFilters, HotelChain, Customer } from "@/types";
 import { AREAS, CAPACITIES } from "@/lib/mockData";
 import { CustomSelect } from "@/components/CustomSelect";
-
-const DEMO_CUSTOMER_ID = 1;
 
 const DEFAULT_FILTERS: SearchFilters = {
   start_date: "", end_date: "", capacity: "", area: "",
@@ -17,12 +15,17 @@ export default function SearchPage() {
   const [filters, setFilters]       = useState<SearchFilters>(DEFAULT_FILTERS);
   const [results, setResults]       = useState<RoomSearchResult[]>([]);
   const [chains, setChains]         = useState<HotelChain[]>([]);
+  const [customers, setCustomers]   = useState<Customer[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<number | "">("");
   const [loading, setLoading]       = useState(false);
   const [bookingRoom, setBookingRoom] = useState<RoomSearchResult | null>(null);
   const [bookingDone, setBookingDone] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
 
-  useEffect(() => { getHotelChains().then(setChains); }, []);
+  useEffect(() => {
+    getHotelChains().then(setChains);
+    getCustomers().then((c) => { setCustomers(c); if (c.length > 0) setSelectedCustomer(c[0].customer_ID); });
+  }, []);
 
   const runSearch = useCallback(async (f: SearchFilters) => {
     setLoading(true);
@@ -37,11 +40,11 @@ export default function SearchPage() {
   }
 
   async function handleBook() {
-    if (!bookingRoom || !filters.start_date || !filters.end_date) return;
+    if (!bookingRoom || !filters.start_date || !filters.end_date || selectedCustomer === "") return;
     setBookingLoading(true);
     try {
       await createBooking({
-        customer_ID: DEMO_CUSTOMER_ID,
+        customer_ID: selectedCustomer,
         room_ID: bookingRoom.room_ID,
         hotel_ID: bookingRoom.hotel_ID,
         start_date: filters.start_date,
@@ -201,7 +204,8 @@ export default function SearchPage() {
                 <h3 className="text-lg font-semibold text-moss-900 mb-2">Booking Confirmed</h3>
                 <p className="text-sm text-moss-700 mb-6">
                   Room {bookingRoom.room_num} at {bookingRoom.hotel_name} —{" "}
-                  {filters.start_date} to {filters.end_date}
+                  {filters.start_date} to {filters.end_date}<br />
+                  <span className="text-moss-600">for {customers.find(c => c.customer_ID === selectedCustomer)?.name ?? `Customer #${selectedCustomer}`}</span>
                 </p>
                 <button
                   onClick={() => setBookingRoom(null)}
@@ -217,6 +221,14 @@ export default function SearchPage() {
                   <button onClick={() => setBookingRoom(null)} className="text-moss-600 hover:text-moss-600 text-xl leading-none">&times;</button>
                 </div>
                 <div className="px-6 py-5 space-y-4">
+                  <div>
+                    <p className="text-xs font-semibold text-moss-700 uppercase tracking-widest mb-1.5">Customer</p>
+                    <CustomSelect
+                      value={selectedCustomer}
+                      onChange={(v) => setSelectedCustomer(v === "" ? "" : Number(v))}
+                      options={[{ value: "", label: "Select customer..." }, ...customers.map((c) => ({ value: c.customer_ID, label: `${c.name} (ID ${c.customer_ID})` }))]}
+                    />
+                  </div>
                   <div className="bg-moss-50 rounded-lg p-4 space-y-2.5 text-sm">
                     <Row label="Hotel"    value={bookingRoom.hotel_name} />
                     <Row label="Room"     value={`#${bookingRoom.room_num}`} />
@@ -241,7 +253,7 @@ export default function SearchPage() {
                     <button onClick={() => setBookingRoom(null)} className="flex-1 border border-moss-300 rounded-lg py-2.5 text-sm font-medium hover:bg-moss-50">Cancel</button>
                     <button
                       onClick={handleBook}
-                      disabled={!filters.start_date || !filters.end_date || bookingLoading}
+                      disabled={!filters.start_date || !filters.end_date || selectedCustomer === "" || bookingLoading}
                       className="flex-1 bg-moss-800 hover:bg-moss-900 disabled:opacity-50 text-white rounded-lg py-2.5 text-sm font-semibold"
                     >
                       {bookingLoading ? "Booking..." : "Confirm"}
